@@ -11,7 +11,7 @@ const signup = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'Email already used!' });
     }
 
     // Hash password
@@ -52,13 +52,13 @@ const login = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found!' });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Email or password incorrect!' });
     }
 
     // Generate JWT token

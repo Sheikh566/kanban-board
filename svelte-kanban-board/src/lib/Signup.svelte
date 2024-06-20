@@ -1,32 +1,35 @@
 <script>
   import PasswordInput from "./PasswordInput.svelte";
+  import { FetchWrapper } from "./fetch-wrapper";
 
   let name = "";
   let email = "";
   let password = "";
   let spinner = false;
-  let error = "";
+  let errorMessage = "";
+  let rememberMe = false;
 
-  async function handlesignup() {
+  async function handleSignUp() {
     spinner = true;
-    const signupUrl = "https://dummyjson.com/users/add";
-    const userData = await fetch(signupUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firstName: name,
-        email: email,
-        password: password,
-      }),
-    }).then((res) => res.json());
+    const res = await FetchWrapper.post("/signup", {
+      name,
+      email,
+      password,
+    });
     spinner = false;
 
-    if (!userData) {
-      console.log("No data received");
+    if (res.status != 201) {
+      errorMessage = res.data.message;
       return;
     }
 
-    console.log(userData);
+    if (rememberMe) {
+      localStorage.setItem("RememberMeToken", res.data.token);
+    }
+
+    sessionStorage.setItem("token", res.data.token);
+    window.location.href = "/";
+
     return;
   }
 
@@ -35,49 +38,40 @@
   }
 </script>
 
-<div class="container">
-  <div id="signup-card">
-    <form on:submit|preventDefault={handlesignup}>
-      <div>
-        <label for="name">Name:</label>
-        <input id="name" type="text" bind:value={name} />
-      </div>
-      <div>
-        <label for="email">Email:</label>
-        <input id="email" type="email" bind:value={email} />
-      </div>
-      <PasswordInput {handlePasswordInput} />
-      <div>
-        <button type="submit" disabled={spinner}>
-          {#if spinner}
-            <i class="fa-solid fa-circle-notch"></i>
-          {:else}
-            Sign up
-          {/if}
-        </button>
-      </div>
-      <div id="error-message">
-        <p>{error}</p>
-      </div>
-      <div class="signup">
-        Already have an account? <a href="/login">Login</a>
-      </div>
-    </form>
-  </div>
-  <div id="continue-as-guest">
-    <a href="/">Continue as guest</a>
-  </div>
+<div id="signup-card">
+  <form on:submit|preventDefault={handleSignUp}>
+    <div>
+      <label for="name">Name:</label>
+      <input id="name" type="text" bind:value={name} />
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input id="email" type="email" bind:value={email} />
+    </div>
+    <PasswordInput {handlePasswordInput} />
+    <div>
+      <input id="remember-me" type="checkbox" bind:checked={rememberMe} />
+      <label for="remember-me">Remember Me</label>
+    </div>
+    <div>
+      <button type="submit" disabled={spinner}>
+        {#if spinner}
+          <i class="fa-solid fa-circle-notch"></i>
+        {:else}
+          Sign up
+        {/if}
+      </button>
+    </div>
+    <div id="error-message">
+      <p>{errorMessage}</p>
+    </div>
+    <div class="signup">
+      Already have an account? <a href="/login">Login</a>
+    </div>
+  </form>
 </div>
 
 <style>
-  #continue-as-guest {
-    text-align: center;
-    margin-top: 3em;
-  }
-  #continue-as-guest a {
-    color: white;
-    text-decoration: none;
-  }
   #signup-card {
     margin-left: calc(50vw - 15em);
     padding: 0;
@@ -95,7 +89,7 @@
     flex-direction: column;
     gap: 1em;
   }
-  #signup-card input {
+  #signup-card input:not([type="checkbox"]) {
     width: calc(100% - 2em);
     padding: 0.5em;
     background-color: transparent;
@@ -133,10 +127,8 @@
     color: red;
     text-align: center;
   }
-  .signup {
-    position: relative;
-    text-align: center;
-    top: 4em;
+  .signup { 
+    margin-left: 5em;
   }
   .fa-circle-notch {
     font-size: 1em;

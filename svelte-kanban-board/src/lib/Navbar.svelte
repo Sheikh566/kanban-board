@@ -1,11 +1,11 @@
 <script>
-  import { Link } from 'svelte-routing';
   import { current_user } from "./stores";
   $: userName = $current_user ? $current_user.name : null;
 
   function handleLogout() {
     localStorage.removeItem('RememberMeToken');
-    window.location.reload();
+    sessionStorage.removeItem('token');
+    window.location.href = "/login";
     current_user.update(() => null);
   }
 </script>
@@ -17,8 +17,6 @@
       <li>{userName}</li>
       <li> | </li>
       <li><a href="#" on:click={handleLogout}>Logout</a></li>
-    {:else}
-      <li><a href="/login">Login</a> to save your board</li>
     {/if}
   </ul>
 </nav>

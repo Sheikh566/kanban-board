@@ -47,7 +47,10 @@ const updateTask = async (req, res) => {
     if (!['todo', 'in-progress', 'done'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -63,8 +66,10 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   try {
-    await Task.deleteOne({ _id: req.params.id });
-    res.json({ message: 'Task deleted' });
+    const deleteRes = await Task.deleteOne({ _id: req.params.id, user: req.user.id });
+    return deleteRes.deletedCount === 0
+      ? res.status(404).json({ message: 'Task not found' })
+      : res.json({ message: 'Task deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting task', error: error.message });
   }
