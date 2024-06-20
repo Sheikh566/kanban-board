@@ -1,41 +1,39 @@
 <script>
   import PasswordInput from "./PasswordInput.svelte";
+  import { FetchWrapper } from "./fetch-wrapper";
 
   let email = "";
   let password = "";
   let rememberMe = false;
-  let incorrectCreds = false;
+  let errorMessage = "";
   let spinner = false;
 
   async function handleLogin() {
     spinner = true;
-    const loginUrl = "https://dummyjson.com/user/login";
-    const userData = await fetch(loginUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: "emilys",
-        password: password,
-      }),
-    }).then((res) => res.json());
+    const res = await FetchWrapper.post("/login", {
+      email,
+      password,
+    });
     spinner = false;
 
-    if (!userData) {
+    if (!res) {
       console.log("No data received");
       return;
     }
 
-    if (userData.message == "Invalid credentials") {
-      incorrectCreds = true;
+    if (res.status != 200) {
+      errorMessage = res.data.message;
       return;
     }
-    incorrectCreds = false;
+    errorMessage = "";
 
     if (rememberMe) {
-      localStorage.setItem("RememberMeToken", userData.token);
+      localStorage.setItem("RememberMeToken", res.data.token);
     }
 
-    console.log(userData);
+    sessionStorage.setItem("token", res.data.token);
+    window.location.href = "/";
+
     return;
   }
 
@@ -44,49 +42,36 @@
   }
 </script>
 
-<div class="container">
-  <div id="login-card">
-    <form on:submit|preventDefault={handleLogin}>
-      <div>
-        <label for="email">Email:</label>
-        <input id="email" type="email" bind:value={email} />
-      </div>
-      <PasswordInput {handlePasswordInput} />
-      <div>
-        <input id="remember-me" type="checkbox" bind:checked={rememberMe} />
-        <label for="remember-me">Remember Me</label>
-      </div>
-      <div>
-        <button type="submit" disabled={spinner}>
-          {#if spinner}
-            <i class="fa-solid fa-circle-notch"></i>
-          {:else}
-            Login
-          {/if}
-        </button>
-      </div>
-      <div id="incorrect-creds">
-        <p style="opacity: {+incorrectCreds}">Email or password incorrect!</p>
-      </div>
-      <div class="signup">
-        Don't have an account? <a href="/signup">Sign up</a>
-      </div>
-    </form>
-  </div>
-  <div id="continue-as-guest">
-    <a href="/">Continue as guest</a>
-  </div>
+<div id="login-card">
+  <form on:submit|preventDefault={handleLogin}>
+    <div>
+      <label for="email">Email:</label>
+      <input id="email" type="email" on:input={({ target }) => { email = target["value"] }} />
+    </div>
+    <PasswordInput {handlePasswordInput} />
+    <div>
+      <input id="remember-me" type="checkbox" bind:checked={rememberMe} />
+      <label for="remember-me">Remember Me</label>
+    </div>
+    <div>
+      <button type="submit" disabled={spinner}>
+        {#if spinner}
+          <i class="fa-solid fa-circle-notch"></i>
+        {:else}
+          Login
+        {/if}
+      </button>
+    </div>
+    <div id="incorrect-creds">
+      <p style="opacity: {+!!errorMessage}">{errorMessage}</p>
+    </div>
+    <div class="signup">
+      Don't have an account? <a href="/signup">Sign up</a>
+    </div>
+  </form>
 </div>
 
 <style>
-  #continue-as-guest {
-    text-align: center;
-    margin-top: 3em;
-  }
-  #continue-as-guest a {
-    color: white;
-    text-decoration: none;
-  }
   #login-card {
     margin-left: calc(50vw - 15em);
     padding: 0;
@@ -143,9 +128,7 @@
     text-align: center;
   }
   .signup {
-    position: relative;
-    text-align: center;
-    top: 3.7em;
+    margin-left: 5em;
   }
   .fa-circle-notch {
     font-size: 1em;

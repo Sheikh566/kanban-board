@@ -1,6 +1,8 @@
 <script>
   import Card from "./Card.svelte";
-  import { columns } from "./stores.js";
+  import { FetchWrapper } from "./fetch-wrapper";
+  import { columns, current_user } from "./stores.js";
+  import { onMount } from "svelte";
 
   let draggedTask = null;
   let hoveringOverBasket;
@@ -8,55 +10,119 @@
   // Drag & Drop Functions
   function handleDragStart(event, task) {
     draggedTask = task;
-    event.dataTransfer.setData("text/plain", task.id);
+    event.dataTransfer.setData("text/plain", task._id);
   }
 
   function handleDragOver(event) {
     event.preventDefault(); // Allow drop
   }
 
-  function handleDrop(event, column) {
+  async function handleDrop(event, dropColumn) {
     event.preventDefault();
+
+    if (draggedTask.status === dropColumn.key) return;
     const taskId = event.dataTransfer.getData("text/plain");
 
-    // Remove from old column
-    draggedTask.column.tasks = draggedTask.column.tasks.filter(
-      (t) => t.id !== +taskId
-    );
+    const body = { 
+      title: draggedTask.title,
+      text: draggedTask.text,
+      status: dropColumn.key 
+    };
 
-    // Add to new column
-    column.tasks = [...column.tasks, draggedTask];
+    columns.update((cols) => {
+      for (let col of cols) {
+        // Remove the task from the previous column
+        if (col.key === draggedTask.status) {
+          col.tasks = col.tasks.filter((task) => task._id !== draggedTask._id);
+        }
+        // Add the task to the new column
+        if (col.key === dropColumn.key) {
+          let taskCopy = JSON.parse(JSON.stringify(draggedTask));
+          taskCopy.status = dropColumn.key;
+          col.tasks.push(taskCopy);
+        }
+      }
+      return cols;
+    });
 
     draggedTask = null;
-    columns.update((cols) => cols); // Trigger re-render
+
+    const token = localStorage.getItem("RememberMeToken") || sessionStorage.getItem("token");
+    await FetchWrapper.put(
+      `/tasks/${taskId}`, 
+      body,
+      token
+    );
   }
 
-  function addNewCard(column) {
-    console.log(column.title + " clicked");
-    const newCard = {
-      id: Date.now(), // Simple way to generate a unique id
-      title: 'New Card',
+  async function addNewCard(column) {
+    let newCard = {
+      _id: 0,
+      title: 'New Task',
       text: 'Add a description',
+      status: column.key,
     };
 
     columns.update(cols => {
-      const colIndex = cols.findIndex(col => col.id === column.id);
+      const colIndex = cols.findIndex(col => col.key === column.key);
       if (colIndex !== -1) {
         cols[colIndex].tasks.push(newCard);
       }
-      console.log(cols);
+      return cols;
+    });
+
+    const token = localStorage.getItem("RememberMeToken") || sessionStorage.getItem("token");
+    const { data } = await FetchWrapper.post("/tasks", newCard, token);
+    columns.update(cols => {
+      const colIndex = cols.findIndex(col => col.key === column.key);
+      if (colIndex !== -1) {
+        cols[colIndex].tasks[cols[colIndex].tasks.length - 1] = data;
+      }
       return cols;
     });
   }
+
+  onMount(async () => {
+    // Redirect to login if not logged in
+    let token = localStorage.getItem("RememberMeToken") || sessionStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+    }
+
+    const [me, { data: tasks }] = await Promise.all([
+      FetchWrapper.get("/me", token),
+      FetchWrapper.get("/tasks", token),
+    ]);
+
+    if (me.status !== 200) {
+      window.location.href = "/login";
+    }
+
+    current_user.update(() => {
+      return {
+        name: me.data.name,
+      };
+    });
+
+    columns.update((cols) => {
+      tasks.forEach((task) => {
+        const colIndex = cols.findIndex((col) => col.key === task.status);
+        if (colIndex !== -1) {
+          cols[colIndex].tasks.push(task);
+        }
+      });
+      return cols;
+    });
+  });
 </script>
 
 <div id="kanban-container">
-  {#each $columns as column (column.id)}
+  {#each $columns as column (column.key)}
     <div
       class="column"
-      class:hovering={hoveringOverBasket === column.id}
+      class:hovering={hoveringOverBasket === column.key}
       on:dragenter={() => {
-        hoveringOverBasket = column.id;
+        hoveringOverBasket = column.key;
         setTimeout(() => (hoveringOverBasket = null), 3000);
       }}
       on:dragleave={() => (hoveringOverBasket = null)}
@@ -66,7 +132,7 @@
     >
       <h3 class="column-title">{column.title}</h3>
       <ul>
-        {#each column.tasks as task (task.id)}
+        {#each column.tasks as task (task._id)}
           <Card
             title={task.title}
             text={task.text}
