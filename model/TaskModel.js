@@ -15,6 +15,11 @@ const taskSchema = new mongoose.Schema({
         enum: ['todo', 'in-progress', 'done'],
         required: true
     },
+    color: {
+        type: String,
+        required: true,
+        default: '#ffffcc',  // cream
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
