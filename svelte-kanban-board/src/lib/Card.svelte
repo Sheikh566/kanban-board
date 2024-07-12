@@ -1,26 +1,14 @@
 <script>
-  import { FetchWrapper } from './fetch-wrapper.js';
-  import { columns } from './stores.js';
-  export let title = '';
-  export let text = '';
+  import { FetchWrapper } from "./fetch-wrapper.js";
+  import { columns } from "./stores.js";
+
   export let task;
   export let column;
   export let handleDragStart;
-  const PAPER_COLORS = [
-    '#ffffcc', // --cream
-    '#DCFFE3', // --nyanza
-    "#b9fff9", // --celeste
-    "#f48668", // --coral
-    "#DAFF97", // --mindaro
-    "#dbbbf5", // --mauve
-    "#ffcab6", // --apricot
-    "#B0FDD5", // --aquamarine
-    "#f5f5f5", // --white-smoke
-  ];
 
   let timeoutId;
   function debounce(func, delay) {
-    return function(...args) {
+    return function (...args) {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
@@ -32,11 +20,17 @@
     task[field] = value;
     //columns.update((cols) => cols); // Re-render the board
 
-    const { title, text, status } = task;
+    const { title, text, status, color } = task;
 
     // API call to update the task in the database
-    const token = localStorage.getItem('RememberMeToken') || sessionStorage.getItem('token');
-    await FetchWrapper.put(`/tasks/${task._id}`, { title, text, status }, token);
+    const token =
+      localStorage.getItem("RememberMeToken") ||
+      sessionStorage.getItem("token");
+    await FetchWrapper.put(
+      `/tasks/${task._id}`,
+      { title, text, status, color },
+      token
+    );
   }, 750);
 
   async function deleteCard() {
@@ -49,34 +43,35 @@
     });
 
     const token =
-      localStorage.getItem('RememberMeToken') || sessionStorage.getItem('token');
-    
+      localStorage.getItem("RememberMeToken") ||
+      sessionStorage.getItem("token");
+
     await FetchWrapper.delete(`/tasks/${task._id}`, token);
   }
 </script>
 
 <li
-  class='card'
+  class="card"
   draggable={true}
   on:dragstart={(event) => handleDragStart(event, { ...task, column })}
 >
-  <div style='background-color: {PAPER_COLORS[Math.floor(Math.random() * PAPER_COLORS.length)]}'>
+  <div style="background-color: {task.color}">
     <h4
-      class='title'
-      contenteditable='true'
-      on:blur={(event) => updateTask('title', event)}
+      class="title"
+      contenteditable="true"
+      on:blur={(event) => updateTask("title", event)}
     >
-      {title}
+      {task.title}
     </h4>
     <p
-      class='text'
-      contenteditable='true'
-      on:blur={(event) => updateTask('text', event)}
+      class="text"
+      contenteditable="true"
+      on:blur={(event) => updateTask("text", event)}
     >
-      {text}
+      {task.text}
     </p>
-    <button class='delete-button' on:click={deleteCard}>
-      <i class='fa-solid fa-trash'></i>
+    <button class="delete-button" on:click={deleteCard}>
+      <i class="fa-solid fa-trash"></i>
     </button>
   </div>
 </li>
@@ -102,7 +97,7 @@
   }
 
   .card:active {
-    cursor: grabbing
+    cursor: grabbing;
   }
 
   .card .title,
@@ -112,7 +107,7 @@
   }
 
   .text {
-    font-family: 'Reenie Beanie';
+    font-family: "Reenie Beanie";
     margin: 0;
     font-size: 1.3em;
   }

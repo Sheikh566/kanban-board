@@ -2,7 +2,7 @@ const Task = require('../model/TaskModel');
 
 const createTask = async (req, res) => {
   try {
-    const { title, text, status } = req.body;
+    const { title, text, status, color } = req.body;
     if (!title || !status) {
       return res.status(400).json({ message: 'title or status missing in body' });
     }
@@ -13,7 +13,8 @@ const createTask = async (req, res) => {
       title,
       text: text || 'Add a description',
       status,
-      user: req.user.id
+      user: req.user.id,
+      color: color || '#ffffcc' // cream
     });
     const newTask = await task.save();
     res.status(201).json(newTask);
@@ -40,9 +41,9 @@ const getTasks = async (req, res) => {
 
 const updateTask = async (req, res) => {
   try {
-    const { title, text, status } = req.body;
-    if (!title || !status) {
-      return res.status(400).json({ message: 'title or status missing in body' });
+    const { title, text, status, color } = req.body;
+    if (!title || !status || !color) {
+      return res.status(400).json({ message: 'Some fields are missing in the body' });
     }
     if (!['todo', 'in-progress', 'done'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
@@ -57,6 +58,7 @@ const updateTask = async (req, res) => {
     task.title = title;
     task.text = text || '';
     task.status = status;
+    task.color = color;
     const updatedTask = await task.save();
     res.json(updatedTask);
   } catch (error) {

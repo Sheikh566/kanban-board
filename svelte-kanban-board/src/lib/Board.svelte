@@ -1,6 +1,7 @@
 <script>
   import Card from "./Card.svelte";
   import { FetchWrapper } from "./fetch-wrapper";
+  import { PAPER_COLORS } from "./paper-colors";
   import { columns, current_user } from "./stores.js";
   import { onMount } from "svelte";
 
@@ -26,6 +27,7 @@
     const body = { 
       title: draggedTask.title,
       text: draggedTask.text,
+      color: draggedTask.color,
       status: dropColumn.key 
     };
 
@@ -45,14 +47,14 @@
       return cols;
     });
 
-    draggedTask = null;
-
     const token = localStorage.getItem("RememberMeToken") || sessionStorage.getItem("token");
     await FetchWrapper.put(
       `/tasks/${taskId}`, 
       body,
       token
     );
+
+    draggedTask = null;
   }
 
   async function addNewCard(column) {
@@ -61,6 +63,7 @@
       title: 'New Task',
       text: 'Add a description',
       status: column.key,
+      color: PAPER_COLORS[Math.floor(Math.random() * PAPER_COLORS.length)],
     };
 
     columns.update(cols => {
@@ -130,12 +133,11 @@
       on:drop={(event) => handleDrop(event, column)}
       role="list"
     >
-      <h3 class="column-title">{column.title}</h3>
+
+    <h3 class="column-title">{column.title}</h3>
       <ul>
         {#each column.tasks as task (task._id)}
           <Card
-            title={task.title}
-            text={task.text}
             {task}
             {column}
             {handleDragStart}
@@ -173,6 +175,7 @@
 
   .column-title {
     margin-top: 0;
+    z-index: 2;
   }
 
   .column ul {
@@ -189,6 +192,7 @@
   .add-button:hover {
     color: greenyellow;
   }
+
 
   ul li:nth-child(even) a{
   transform:rotate(4deg);
