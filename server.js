@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const { cliColorGreen } = require('./helper/util-helper');
 const routes = require('./helper/router');
 const requestLogger = require('./middleware/request-logger');
+const serverless = require('serverless-http');
 
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
@@ -35,8 +36,9 @@ process.on('SIGINT', async () => {
    }
 });
 
-app.listen(port, () => {
-   const url = cliColorGreen(`http://127.0.0.1:${port}`);
-   console.log(`Server is up at ${url}`);
-});
+// app.listen(port, () => {
+//    const url = cliColorGreen(`http://127.0.0.1:${port}`);
+//    console.log(`Server is up at ${url}`);
+// });
 
+module.exports.handler = serverless(app);
