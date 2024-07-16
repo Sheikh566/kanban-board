@@ -1,0 +1,23 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: sheikh566
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: serverless-kanban-board
+service: kanban-board
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  stage: production
+  memorySize: 128
+  timeout: 5
+  environment:
+    MONGODB_URI: ${env:MONGODB_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
+
+functions:
+  server:
+    handler: src/server.handler
+    events:
+      - http: ANY /{proxy+}
+      - http: ANY /
