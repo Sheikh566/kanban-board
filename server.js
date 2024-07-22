@@ -8,12 +8,19 @@ const { cliColorGreen } = require('./helper/util-helper');
 const routes = require('./helper/router');
 const requestLogger = require('./middleware/request-logger');
 const serverless = require('serverless-http');
+const path = require('path');
 
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
 app.use(cors());
 
-//app.use(express.static('public'));app.use("/api", appRoutes);
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route all other requests to index.html (important for client-side routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.use(requestLogger);
 
 app.use('/api', routes);

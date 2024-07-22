@@ -5,7 +5,14 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-image: url('./assets/green-textile-texture.jpg');
+
+  background-image: linear-gradient(
+    135deg,
+    #0e9b3f 0%,
+    #177029 100%
+  );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

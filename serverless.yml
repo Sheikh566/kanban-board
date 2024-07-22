@@ -8,7 +8,7 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-south-1
-  stage: production
+  stage: dev
   memorySize: 128
   timeout: 5
   environment:
@@ -21,3 +21,7 @@ functions:
     events:
       - http: ANY /{proxy+}
       - http: ANY /
+
+package:
+  exclude:
+    - svelte-kanban-board/**
